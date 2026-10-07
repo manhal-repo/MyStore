@@ -172,7 +172,7 @@ fun StoreApp(activity: Activity, vm: StoreVM = viewModel()) {
 fun AppRow(app: AppItem, onDownload: () -> Unit) {
     Card(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(app.iconUrl, null, Modifier.size(48.dp))
+            AsyncImage(model = app.iconUrl, contentDescription = app.name, modifier = Modifier.size(48.dp))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(app.name, style = MaterialTheme.typography.titleMedium)
