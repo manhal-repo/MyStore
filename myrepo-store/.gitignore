@@ -1,0 +1,9 @@
+node_modules
+dist
+fdroid/keystore.jks
+fdroid/config.yml
+fdroid/tmp
+fdroid/repo/index*
+fdroid/repo/entry*
+fdroid/repo/icons*
+fdroid/repo/diff

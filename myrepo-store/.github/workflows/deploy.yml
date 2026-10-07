@@ -1,0 +1,52 @@
+name: Build & Deploy
+on:
+  push: { branches: [main] }
+  workflow_dispatch:
+permissions: { contents: read, pages: write, id-token: write }
+concurrency: { group: pages, cancel-in-progress: true }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Install fdroidserver
+        run: sudo apt-get update && sudo apt-get install -y fdroidserver
+      - name: Prepare keystore + config
+        working-directory: fdroid
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > keystore.jks
+          cat > config.yml <<CFG
+          repo_url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/repo
+          repo_name: "My App Store"
+          repo_description: "My private F-Droid repository"
+          archive_older: 0
+          keystore: keystore.jks
+          repo_keyalias: $KEY_ALIAS
+          keystorepass: $KEYSTORE_PASS
+          keypass: $KEYSTORE_PASS
+          keydname: "CN=MyRepo, OU=Apps, O=Me, C=US"
+          CFG
+          sed -i 's/^          //' config.yml
+          chmod 600 config.yml
+      - name: Build F-Droid index
+        working-directory: fdroid
+        run: fdroid update -c
+      - name: Build website
+        run: npm install && npm run build
+      - name: Merge repo into site
+        run: cp -r fdroid/repo dist/repo
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: dist }
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: "${{ steps.d.outputs.page_url }}" }
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4
